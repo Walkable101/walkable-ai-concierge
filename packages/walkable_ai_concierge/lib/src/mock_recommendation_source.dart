@@ -28,10 +28,8 @@ class MockRecommendationSource implements RecommendationSource {
       throw StateError('Simulated recommendation failure');
     }
 
-    // Allow a little slack so a 30-minute walker still sees a 35-minute one.
-    final maxMinutes = request.duration == WalkDuration.extended
-        ? 999
-        : request.duration.minutes + 10;
+    // The selected duration is a hard maximum: never suggest a longer walk.
+    final maxMinutes = request.duration.minutes;
 
     final matches = _catalog.where((c) {
       if (c.city != request.city) return false;
@@ -43,12 +41,8 @@ class MockRecommendationSource implements RecommendationSource {
       return true;
     }).toList();
 
-    // Closest to the chosen duration first.
-    matches.sort(
-      (a, b) => (a.durationMinutes - request.duration.minutes).abs().compareTo(
-        (b.durationMinutes - request.duration.minutes).abs(),
-      ),
-    );
+    // Make the most of the user's time: longest walk that still fits first.
+    matches.sort((a, b) => b.durationMinutes.compareTo(a.durationMinutes));
 
     return [
       for (final c in matches.take(4))
@@ -58,12 +52,12 @@ class MockRecommendationSource implements RecommendationSource {
 
   String _explain(ChallengeRecommendation c, ConciergeRequest request) {
     final parts = <String>[
-      'Fits your ${request.duration.label} window at about '
-          '${c.durationMinutes} min',
+      'Takes about ${c.durationMinutes} min, within your '
+          '${request.duration.label} limit',
     ];
     if (request.rewards.contains(c.rewardType)) {
       parts.add(
-        'earns the ${c.rewardType.label.toLowerCase()} reward you wanted',
+        'matches your ${c.rewardType.label.toLowerCase()} reward preference',
       );
     }
     final note = request.note.toLowerCase();
@@ -80,20 +74,21 @@ class MockRecommendationSource implements RecommendationSource {
   }
 }
 
-// Fictional businesses and routes only.
+// Fictional businesses and routes only. Reward labels are sample text:
+// descriptions must never say a reward is issued, added or waiting.
 const _catalog = <ChallengeRecommendation>[
   ChallengeRecommendation(
     id: 'acc-arch',
     title: 'Independence Arch Loop',
     businessName: 'Starlight Bakery',
     city: 'Accra',
-    distanceKm: 2.6,
-    durationMinutes: 35,
+    distanceKm: 2.4,
+    durationMinutes: 30,
     rewardLabel: 'Free pastry',
     rewardType: RewardPreference.foodAndDrink,
     explanation: 'A wide, flat loop around famous city landmarks.',
     description:
-        'Start at the arch, circle the square and finish with a pastry at Starlight Bakery. Mostly flat with plenty of space to walk side by side.',
+        'Start at the arch, circle the square and finish near Starlight Bakery. Mostly flat with plenty of space to walk side by side.',
     tags: ['landmarks', 'flat', 'sightseeing', 'history'],
   ),
   ChallengeRecommendation(
@@ -107,7 +102,7 @@ const _catalog = <ChallengeRecommendation>[
     rewardType: RewardPreference.retail,
     explanation: 'Old streets and sea views on the way to the lighthouse.',
     description:
-        'Wind through historic streets towards the lighthouse, then back to Harbourline Outfitters to claim your store credit.',
+        'Wind through historic streets towards the lighthouse, then loop back to finish near Harbourline Outfitters.',
     tags: ['history', 'sea', 'beach', 'culture'],
   ),
   ChallengeRecommendation(
@@ -135,7 +130,7 @@ const _catalog = <ChallengeRecommendation>[
     rewardType: RewardPreference.discounts,
     explanation: 'A breezy seafront route that is best early in the day.',
     description:
-        'Follow the coast road with the sea alongside you and finish at Sea Breeze Juice Bar for a discounted smoothie.',
+        'Follow the coast road with the sea alongside you and finish near Sea Breeze Juice Bar.',
     tags: ['beach', 'sea', 'morning', 'breeze'],
   ),
   ChallengeRecommendation(
@@ -149,7 +144,7 @@ const _catalog = <ChallengeRecommendation>[
     rewardType: RewardPreference.points,
     explanation: 'A longer fitness route with steady, even pavements.',
     description:
-        'A steady out-and-back along the main boulevard. Good for building distance. Points are added when you finish.',
+        'A steady out-and-back along the main boulevard. Good for building distance at an even pace.',
     tags: ['fitness', 'workout', 'long', 'exercise'],
   ),
   ChallengeRecommendation(
@@ -177,7 +172,7 @@ const _catalog = <ChallengeRecommendation>[
     rewardType: RewardPreference.retail,
     explanation: 'Easy walking between local boutiques and food spots.',
     description:
-        'Browse the square at your own pace and finish at Kente Corner Boutique for a GH₵25 voucher.',
+        'Browse the square at your own pace and finish near Kente Corner Boutique.',
     tags: ['shopping', 'market', 'culture'],
   ),
   ChallengeRecommendation(
@@ -203,9 +198,9 @@ const _catalog = <ChallengeRecommendation>[
     durationMinutes: 40,
     rewardLabel: 'Free dessert',
     rewardType: RewardPreference.foodAndDrink,
-    explanation: 'Timed for golden hour with a dessert at the end.',
+    explanation: 'Timed for golden hour on quiet residential roads.',
     description:
-        'A relaxed evening circuit that ends at Golden Hour Grill, where a free dessert is waiting.',
+        'A relaxed evening circuit that finishes near Golden Hour Grill as the sun goes down.',
     tags: ['evening', 'sunset', 'dinner'],
   ),
   ChallengeRecommendation(
@@ -218,8 +213,7 @@ const _catalog = <ChallengeRecommendation>[
     rewardLabel: '200 points',
     rewardType: RewardPreference.points,
     explanation: 'A quick morning mile to start the day.',
-    description:
-        'A brisk 1.6 km loop that fits before work. Points are added as soon as you finish.',
+    description: 'A brisk 1.6 km loop that fits before work.',
     tags: ['morning', 'fitness', 'quick'],
   ),
 ];

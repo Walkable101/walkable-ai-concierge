@@ -181,6 +181,7 @@ class _ConciergeScreenState extends State<ConciergeScreen> {
                       ),
                       _Section(
                         title: 'Walking duration',
+                        subtitle: 'Maximum',
                         child: _ChipWrap(
                           children: [
                             for (final d in WalkDuration.values)
@@ -267,6 +268,7 @@ class _ConciergeScreenState extends State<ConciergeScreen> {
               _RecommendationCard(
                 challenge: r,
                 joined: _joinedIds.contains(r.id),
+                isDemo: widget.isDemo,
                 onJoin: () => _confirmJoin(r),
                 onOpen: () => _openDetails(r),
               ),
@@ -620,12 +622,14 @@ class _RecommendationCard extends StatelessWidget {
   const _RecommendationCard({
     required this.challenge,
     required this.joined,
+    required this.isDemo,
     required this.onJoin,
     required this.onOpen,
   });
 
   final ChallengeRecommendation challenge;
   final bool joined;
+  final bool isDemo;
   final VoidCallback onJoin;
   final VoidCallback onOpen;
 
@@ -722,7 +726,7 @@ class _RecommendationCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          _RewardRow(challenge: challenge),
+          _RewardRow(challenge: challenge, isDemo: isDemo),
           const SizedBox(height: 12),
           _WhyBox(text: challenge.explanation),
           const SizedBox(height: 16),
@@ -807,9 +811,12 @@ class _Stat extends StatelessWidget {
 }
 
 class _RewardRow extends StatelessWidget {
-  const _RewardRow({required this.challenge});
+  const _RewardRow({required this.challenge, required this.isDemo});
 
   final ChallengeRecommendation challenge;
+
+  /// Labels the reward as a sample so it never reads as a real offer.
+  final bool isDemo;
 
   @override
   Widget build(BuildContext context) {
@@ -835,7 +842,7 @@ class _RewardRow extends StatelessWidget {
             ),
           ),
           Text(
-            challenge.rewardType.label,
+            isDemo ? 'Sample reward' : challenge.rewardType.label,
             style: TextStyle(fontSize: 12, color: p.textSecondary),
           ),
         ],
@@ -1105,7 +1112,7 @@ class _JoinSheet extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            _RewardRow(challenge: challenge),
+            _RewardRow(challenge: challenge, isDemo: isDemo),
             if (isDemo) ...[
               const SizedBox(height: 14),
               Row(
@@ -1294,7 +1301,7 @@ class _ConciergeChallengeDetailScreenState
                                 ],
                               ),
                               const SizedBox(height: 12),
-                              _RewardRow(challenge: c),
+                              _RewardRow(challenge: c, isDemo: widget.isDemo),
                             ],
                           ),
                         ),

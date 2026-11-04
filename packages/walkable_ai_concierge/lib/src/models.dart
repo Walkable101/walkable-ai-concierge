@@ -1,11 +1,11 @@
 import 'package:flutter/cupertino.dart';
 
-/// How long the user wants to walk.
+/// The longest the user wants to walk. Recommendations never exceed it.
 enum WalkDuration {
   short(15, '15 min'),
   medium(30, '30 min'),
   long(45, '45 min'),
-  extended(60, '60+ min');
+  extended(60, '60 min');
 
   const WalkDuration(this.minutes, this.label);
 
